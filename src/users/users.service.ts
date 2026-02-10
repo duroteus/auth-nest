@@ -1,72 +1,47 @@
-import { ConflictException, Injectable } from '@nestjs/common';
-import { DrizzleService } from 'src/infra/database/drizzle/drizzle.service';
-import { users } from 'src/infra/database/drizzle/schema';
-import { eq } from 'drizzle-orm';
-
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
+import type { IUsersRepository } from './repositories/users.repository.interface';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly drizzleService: DrizzleService) {}
+  constructor(
+    @Inject('IUsersRepository')
+    private readonly usersRepository: IUsersRepository,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const db = this.drizzleService.connection;
+    const existingUserByEmail = await this.usersRepository.findByEmail(
+      createUserDto.email,
+    );
 
-    const existingUserByEmail = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, createUserDto.email))
-      .limit(1);
-
-    if (existingUserByEmail.length > 0) {
+    if (existingUserByEmail) {
       throw new ConflictException('Email already in use');
     }
 
-    const existingUserByUsername = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, createUserDto.username))
-      .limit(1);
+    const existingUserByUsername = await this.usersRepository.findByUsername(
+      createUserDto.username,
+    );
 
-    if (existingUserByUsername.length > 0) {
+    if (existingUserByUsername) {
       throw new ConflictException('Username already in use');
     }
 
-    const hashedPassword = createUserDto.password; // TODO: Implement password hashing;
+    const hashedPassword = createUserDto.password; // TODO: Implement password hashing
 
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        username: createUserDto.username,
-        email: createUserDto.email,
-        hashedPassword,
-      })
-      .returning();
+    const newUser = await this.usersRepository.create({
+      username: createUserDto.username,
+      email: createUserDto.email,
+      hashedPassword,
+    });
 
-    const { hashedPassword: _, ...userWithoutPassword } = newUser;
-
-    return userWithoutPassword;
+    return newUser;
   }
 
   async findByEmail(email: string) {
-    const db = this.drizzleService.connection;
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
-
-    return user;
+    return this.usersRepository.findByEmail(email);
   }
 
   async findById(id: string) {
-    const db = this.drizzleService.connection;
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
-
-    return user;
+    return this.usersRepository.findById(id);
   }
 }
