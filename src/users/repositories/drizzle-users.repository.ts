@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { DrizzleService } from '../../infra/database/drizzle/drizzle.service';
 import { users } from '../../infra/database/drizzle/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import {
   IUsersRepository,
   CreateUserData,
+  UpdateUserData,
   User,
 } from './users.repository.interface';
 
@@ -24,8 +25,11 @@ export class DrizzleUsersRepository implements IUsersRepository {
       })
       .returning();
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { hashedPassword: _, ...userWithoutPassword } = newUser;
+    if (!newUser) {
+      throw new Error('Failed to create user');
+    }
+
+    const { hashedPassword: _pw, ...userWithoutPassword } = newUser;
 
     return userWithoutPassword;
   }
@@ -57,10 +61,42 @@ export class DrizzleUsersRepository implements IUsersRepository {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.username, username))
+      .where(sql`lower(${users.username}) = lower(${username})`)
       .limit(1);
 
     return user || null;
+  }
+
+  async update(
+    userId: string,
+    data: UpdateUserData,
+  ): Promise<Omit<User, 'hashedPassword'>> {
+    const db = this.drizzleService.connection;
+
+    const setValues: {
+      updatedAt: Date;
+      username?: string;
+      email?: string;
+      hashedPassword?: string;
+    } = { updatedAt: new Date() };
+    if (data.username !== undefined) setValues.username = data.username;
+    if (data.email !== undefined) setValues.email = data.email;
+    if (data.hashedPassword !== undefined)
+      setValues.hashedPassword = data.hashedPassword;
+
+    const [updatedUser] = await db
+      .update(users)
+      .set(setValues)
+      .where(eq(users.id, userId))
+      .returning();
+
+    if (!updatedUser) {
+      throw new Error('Failed to update user');
+    }
+
+    const { hashedPassword: _pw, ...userWithoutPassword } = updatedUser;
+
+    return userWithoutPassword;
   }
 
   async updateFeatures(userId: string, features: string[]): Promise<void> {

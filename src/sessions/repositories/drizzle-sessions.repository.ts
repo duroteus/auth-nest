@@ -24,6 +24,10 @@ export class DrizzleSessionsRepository implements ISessionsRepository {
       })
       .returning();
 
+    if (!newSession) {
+      throw new Error('Failed to create session');
+    }
+
     return newSession;
   }
 

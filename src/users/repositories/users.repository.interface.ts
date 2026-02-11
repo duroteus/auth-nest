@@ -14,10 +14,16 @@ export interface CreateUserData {
   hashedPassword: string;
 }
 
+export type UpdateUserData = Partial<CreateUserData>;
+
 export interface IUsersRepository {
   create(data: CreateUserData): Promise<Omit<User, 'hashedPassword'>>;
   findByEmail(email: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
   findByUsername(username: string): Promise<User | null>;
+  update(
+    userId: string,
+    data: UpdateUserData,
+  ): Promise<Omit<User, 'hashedPassword'>>;
   updateFeatures(userId: string, features: string[]): Promise<void>;
 }

@@ -35,8 +35,7 @@ export class SessionGuard implements CanActivate {
       const user = await this.sessionsService.getUserByToken(sessionToken);
 
       if (user) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { hashedPassword, ...userWithoutPassword } = user;
+        const { hashedPassword: _pw, ...userWithoutPassword } = user;
         request.user = {
           ...userWithoutPassword,
           features: user.features ?? [],

@@ -12,8 +12,7 @@ export class ActivationsController {
   async activate(@Param('tokenId') tokenId: string) {
     const user = await this.activationsService.activateAccount(tokenId);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { hashedPassword: _, ...userWithoutPassword } = user!;
+    const { hashedPassword: _pw, ...userWithoutPassword } = user!;
 
     return {
       message: 'Account activated successfully',

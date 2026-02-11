@@ -23,6 +23,10 @@ export class DrizzleActivationsRepository implements IActivationsRepository {
       })
       .returning();
 
+    if (!newToken) {
+      throw new Error('Failed to create activation token');
+    }
+
     return newToken;
   }
 

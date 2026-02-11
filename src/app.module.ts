@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DrizzleModule } from './infra/database/drizzle/drizzle.module';
 import { UsersModule } from './users/users.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { ActivationsModule } from './activations/activations.module';
-import { CommonModule } from './common/common.module';
+import { CommonModule, SessionGuard, FeatureGuard } from './common';
 
 @Module({
   imports: [
@@ -16,6 +17,16 @@ import { CommonModule } from './common/common.module';
     ActivationsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: SessionGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: FeatureGuard,
+    },
+  ],
 })
 export class AppModule {}

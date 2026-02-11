@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
+import { UserController } from './user.controller';
 import { DrizzleModule } from '../infra/database/drizzle/drizzle.module';
 import { DrizzleUsersRepository } from './repositories/drizzle-users.repository';
 import { PasswordsModule } from '../passwords/passwords.module';
@@ -14,7 +15,7 @@ import { ActivationsModule } from '../activations/activations.module';
     EmailModule,
     forwardRef(() => ActivationsModule),
   ],
-  controllers: [UsersController],
+  controllers: [UsersController, UserController],
   providers: [
     UsersService,
     {

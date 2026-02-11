@@ -1,7 +1,11 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 export class InternalServerException extends HttpException {
-  constructor(options?: { message?: string; action?: string; cause?: Error }) {
+  constructor(options?: {
+    message?: string;
+    action?: string;
+    cause?: unknown;
+  }) {
     const message =
       options?.message || 'Internal server error. Please try again.';
     const action =
