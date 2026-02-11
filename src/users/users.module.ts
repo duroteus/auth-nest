@@ -15,6 +15,12 @@ import { PasswordsModule } from '../passwords/passwords.module';
       useClass: DrizzleUsersRepository,
     },
   ],
-  exports: [UsersService],
+  exports: [
+    UsersService,
+    {
+      provide: 'IUsersRepository',
+      useClass: DrizzleUsersRepository,
+    },
+  ],
 })
 export class UsersModule {}

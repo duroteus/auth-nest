@@ -2,6 +2,7 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { createAnonymousUser, UserWithFeatures } from '../types/user.type';
+import { SessionsService } from '../../sessions/sessions.service';
 
 interface RequestWithUser extends Request {
   user: UserWithFeatures;
@@ -11,17 +12,14 @@ interface RequestWithUser extends Request {
 export class SessionGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    // TODO: Inject SessionsService when available
-    // private sessionsService: SessionsService,
-    // TODO: Inject UsersService when available
-    // private usersService: UsersService,
+    private sessionsService: SessionsService,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
 
     if (request.cookies?.session_id) {
-      this.injectAuthenticatedUser(request);
+      await this.injectAuthenticatedUser(request);
     } else {
       this.injectAnonymousUser(request);
     }
@@ -29,17 +27,23 @@ export class SessionGuard implements CanActivate {
     return true;
   }
 
-  private injectAuthenticatedUser(request: RequestWithUser): void {
+  private async injectAuthenticatedUser(
+    request: RequestWithUser,
+  ): Promise<void> {
     try {
-      // const sessionToken = request.cookies.session_id;
+      const sessionToken = request.cookies.session_id as string;
+      const user = await this.sessionsService.getUserByToken(sessionToken);
 
-      // TODO: Uncomment when SessionsService is available and make this method async
-      // const session = await this.sessionsService.findOneValidByToken(sessionToken);
-      // const user = await this.usersService.findOneById(session.user_id);
-      // request.user = user;
-
-      // Temporary: inject anonymous user until services are ready
-      this.injectAnonymousUser(request);
+      if (user) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { hashedPassword, ...userWithoutPassword } = user;
+        request.user = {
+          ...userWithoutPassword,
+          features: user.features ?? [],
+        } as UserWithFeatures;
+      } else {
+        this.injectAnonymousUser(request);
+      }
     } catch {
       this.injectAnonymousUser(request);
     }
