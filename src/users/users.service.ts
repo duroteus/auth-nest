@@ -1,12 +1,14 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import type { IUsersRepository } from './repositories/users.repository.interface';
+import { PasswordsService } from '../passwords/passwords.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @Inject('IUsersRepository')
     private readonly usersRepository: IUsersRepository,
+    private readonly passwordsService: PasswordsService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -26,7 +28,9 @@ export class UsersService {
       throw new ConflictException('Username already in use');
     }
 
-    const hashedPassword = createUserDto.password; // TODO: Implement password hashing
+    const hashedPassword = await this.passwordsService.hash(
+      createUserDto.password,
+    );
 
     const newUser = await this.usersRepository.create({
       username: createUserDto.username,

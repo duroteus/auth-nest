@@ -3,9 +3,10 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { DrizzleModule } from '../infra/database/drizzle/drizzle.module';
 import { DrizzleUsersRepository } from './repositories/drizzle-users.repository';
+import { PasswordsModule } from '../passwords/passwords.module';
 
 @Module({
-  imports: [DrizzleModule],
+  imports: [DrizzleModule, PasswordsModule],
   controllers: [UsersController],
   providers: [
     UsersService,
