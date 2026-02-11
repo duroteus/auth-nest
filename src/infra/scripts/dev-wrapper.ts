@@ -1,8 +1,9 @@
 import { spawn } from 'child_process';
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
-const run = (cmd, args) => spawn(cmd, args, { stdio: 'inherit' });
-const runNpm = (name) => run(npm, ['run', name]);
+const run = (cmd: string, args: string[]) =>
+  spawn(cmd, args, { stdio: 'inherit' });
+const runNpm = (name: string) => run(npm, ['run', name]);
 
 let stopped = false;
 const stop = (code = 0) => {

@@ -7,3 +7,10 @@ services:
       - ../../.env.development
     ports:
       - '5432:5432'
+
+  mailcatcher:
+    container_name: nest-mailcatcher-dev
+    image: 'sj26/mailcatcher:v0.10.0'
+    ports:
+      - '1080:1080' # Web UI
+      - '1025:1025' # SMTP
