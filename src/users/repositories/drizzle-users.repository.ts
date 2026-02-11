@@ -62,4 +62,12 @@ export class DrizzleUsersRepository implements IUsersRepository {
 
     return user || null;
   }
+
+  async updateFeatures(userId: string, features: string[]): Promise<void> {
+    const db = this.drizzleService.connection;
+    await db
+      .update(users)
+      .set({ features, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
 }
