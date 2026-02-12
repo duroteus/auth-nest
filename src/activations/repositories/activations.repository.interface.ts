@@ -15,6 +15,7 @@ export interface CreateActivationTokenData {
 export interface IActivationsRepository {
   create(data: CreateActivationTokenData): Promise<ActivationToken>;
   findById(id: string): Promise<ActivationToken | null>;
+  findValidByUserId(userId: string): Promise<ActivationToken | null>;
   markAsUsed(id: string): Promise<void>;
   deleteExpired(): Promise<void>;
 }

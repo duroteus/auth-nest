@@ -18,11 +18,41 @@ export class SessionsService {
     private readonly passwordsService: PasswordsService,
   ) {}
 
+  async createForUser(userId: string) {
+    const user = await this.usersRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException({
+        message: 'User not found.',
+        action: 'Verify the user ID.',
+      });
+    }
+
+    const token = this.generateToken();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + this.SESSION_EXPIRATION_DAYS);
+
+    const session = await this.sessionsRepository.create({
+      token,
+      userId,
+      expiresAt,
+    });
+
+    return {
+      token: session.token,
+      expiresAt: session.expiresAt,
+      userId: session.userId,
+    };
+  }
+
   async create(createSessionDto: CreateSessionDto) {
-    const user = await this.usersRepository.findByEmail(createSessionDto.email);
+    const normalizedEmail = createSessionDto.email.toLowerCase();
+    const user = await this.usersRepository.findByEmail(normalizedEmail);
 
     if (!user) {
-      throw new UnauthorizedException({ message: 'Invalid credentials' });
+      throw new UnauthorizedException({
+        message: 'Invalid credentials.',
+        action: 'Verify that the submitted data is correct.',
+      });
     }
 
     const isPasswordValid = await this.passwordsService.compare(
@@ -31,7 +61,10 @@ export class SessionsService {
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException({ message: 'Invalid credentials' });
+      throw new UnauthorizedException({
+        message: 'Invalid credentials.',
+        action: 'Verify that the submitted data is correct.',
+      });
     }
 
     const token = this.generateToken();

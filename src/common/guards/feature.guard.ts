@@ -28,7 +28,7 @@ export class FeatureGuard implements CanActivate {
     if (!user) {
       throw new ForbiddenException({
         message: 'You do not have permission to execute this action.',
-        action: 'Login to continue.',
+        action: 'Log in to continue.',
       });
     }
 
@@ -37,7 +37,7 @@ export class FeatureGuard implements CanActivate {
     if (!hasFeature) {
       throw new ForbiddenException({
         message: 'You do not have permission to execute this action.',
-        action: `Verify if your user has the feature "${requiredFeature}".`,
+        action: `Verify that your user has the "${requiredFeature}" feature.`,
       });
     }
 

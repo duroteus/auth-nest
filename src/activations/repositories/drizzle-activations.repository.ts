@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DrizzleService } from '../../infra/database/drizzle/drizzle.service';
 import { activationTokens } from '../../infra/database/drizzle/schema';
-import { eq, lt } from 'drizzle-orm';
+import { and, eq, gt, isNull, lt } from 'drizzle-orm';
 import {
   IActivationsRepository,
   CreateActivationTokenData,
@@ -36,6 +36,23 @@ export class DrizzleActivationsRepository implements IActivationsRepository {
       .select()
       .from(activationTokens)
       .where(eq(activationTokens.id, id))
+      .limit(1);
+
+    return token || null;
+  }
+
+  async findValidByUserId(userId: string): Promise<ActivationToken | null> {
+    const db = this.drizzleService.connection;
+    const [token] = await db
+      .select()
+      .from(activationTokens)
+      .where(
+        and(
+          eq(activationTokens.userId, userId),
+          gt(activationTokens.expiresAt, new Date()),
+          isNull(activationTokens.usedAt),
+        ),
+      )
       .limit(1);
 
     return token || null;

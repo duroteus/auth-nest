@@ -1,11 +1,11 @@
 import {
-  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
+import { ValidationException } from '../common/exceptions';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import type { IUsersRepository } from './repositories/users.repository.interface';
@@ -28,20 +28,26 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const existingUserByEmail = await this.usersRepository.findByEmail(
-      createUserDto.email,
-    );
+    const normalizedEmail = createUserDto.email.toLowerCase();
+    const existingUserByEmail =
+      await this.usersRepository.findByEmail(normalizedEmail);
 
     if (existingUserByEmail) {
-      throw new ConflictException('Email already in use');
+      throw new ValidationException({
+        message: 'The provided email is already in use.',
+        action: 'Use another email to complete this operation.',
+      });
     }
 
-    const existingUserByUsername = await this.usersRepository.findByUsername(
-      createUserDto.username,
-    );
+    const normalizedUsername = createUserDto.username.toLowerCase();
+    const existingUserByUsername =
+      await this.usersRepository.findByUsername(normalizedUsername);
 
     if (existingUserByUsername) {
-      throw new ConflictException('Username already in use');
+      throw new ValidationException({
+        message: 'The provided username is already in use.',
+        action: 'Use another username to complete this operation.',
+      });
     }
 
     const hashedPassword = await this.passwordsService.hash(
@@ -49,12 +55,11 @@ export class UsersService {
     );
 
     const newUser = await this.usersRepository.create({
-      username: createUserDto.username,
-      email: createUserDto.email,
+      username: normalizedUsername,
+      email: normalizedEmail,
       hashedPassword,
     });
 
-    // Create activation token and send email
     const activationToken = await this.activationsService.createActivationToken(
       newUser.id,
     );
@@ -118,7 +123,10 @@ export class UsersService {
           updateUserDto.username,
         );
         if (existing) {
-          throw new ConflictException('Username already in use');
+          throw new ValidationException({
+            message: 'The provided username is already in use.',
+            action: 'Use another username to complete this operation.',
+          });
         }
       }
     }
@@ -128,7 +136,10 @@ export class UsersService {
         updateUserDto.email,
       );
       if (existing && existing.id !== targetUser.id) {
-        throw new ConflictException('Email already in use');
+        throw new ValidationException({
+          message: 'The provided email is already in use.',
+          action: 'Use another email to complete this operation.',
+        });
       }
     }
 

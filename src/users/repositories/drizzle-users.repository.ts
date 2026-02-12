@@ -8,20 +8,23 @@ import {
   UpdateUserData,
   User,
 } from './users.repository.interface';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from '../../infra/database/drizzle/schema';
 
 @Injectable()
 export class DrizzleUsersRepository implements IUsersRepository {
+  private readonly db: NodePgDatabase<typeof schema>;
   constructor(private readonly drizzleService: DrizzleService) {}
 
   async create(data: CreateUserData): Promise<Omit<User, 'hashedPassword'>> {
     const db = this.drizzleService.connection;
-
     const [newUser] = await db
       .insert(users)
       .values({
-        username: data.username,
-        email: data.email,
+        username: data.username.toLowerCase(),
+        email: data.email.toLowerCase(),
         hashedPassword: data.hashedPassword,
+        features: ['read:activation_token'],
       })
       .returning();
 
@@ -39,7 +42,7 @@ export class DrizzleUsersRepository implements IUsersRepository {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.email, email))
+      .where(sql`lower(${users.email}) = lower(${email})`)
       .limit(1);
 
     return user || null;
@@ -71,19 +74,19 @@ export class DrizzleUsersRepository implements IUsersRepository {
     userId: string,
     data: UpdateUserData,
   ): Promise<Omit<User, 'hashedPassword'>> {
-    const db = this.drizzleService.connection;
-
     const setValues: {
       updatedAt: Date;
       username?: string;
       email?: string;
       hashedPassword?: string;
     } = { updatedAt: new Date() };
-    if (data.username !== undefined) setValues.username = data.username;
-    if (data.email !== undefined) setValues.email = data.email;
+    if (data.username !== undefined)
+      setValues.username = data.username.toLowerCase();
+    if (data.email !== undefined) setValues.email = data.email.toLowerCase();
     if (data.hashedPassword !== undefined)
       setValues.hashedPassword = data.hashedPassword;
 
+    const db = this.drizzleService.connection;
     const [updatedUser] = await db
       .update(users)
       .set(setValues)

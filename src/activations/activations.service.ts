@@ -33,6 +33,17 @@ export class ActivationsService {
     return token;
   }
 
+  async activateByUserId(userId: string) {
+    const token = await this.activationsRepository.findValidByUserId(userId);
+    if (!token) {
+      throw new NotFoundException({
+        message: 'Activation token not found or expired.',
+        action: 'Create a new account.',
+      });
+    }
+    return this.activateAccount(token.id);
+  }
+
   async activateAccount(tokenId: string) {
     const token = await this.activationsRepository.findById(tokenId);
 
